@@ -1584,28 +1584,25 @@
     });
     source += "';\n";
 
-    // If a variable is not specified, place data values in local scope.
-    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
     source = "var __t,__p='',__j=Array.prototype.join," +
       "print=function(){__p+=__j.call(arguments,'');};\n" +
       source + 'return __p;\n';
 
-    var render;
-    try {
-      render = new Function(settings.variable || 'obj', '_', source);
-    } catch (e) {
-      e.source = source;
-      throw e;
-    }
-
     var template = function(data) {
-      return render.call(this, data, _);
-    };
+      var render;
 
-    // Provide the compiled source as a convenience for precompilation.
-    var argument = settings.variable || 'obj';
-    template.source = 'function(' + argument + '){\n' + source + '}';
+      var injectedKeys = _.keys(data).concat(['_']);
+      var injectedValues = _.values(data).concat([_]);
+
+      try{
+        render = new Function(injectedKeys.join(','), source);
+      } catch (e) {
+        e.source = source;
+        throw e;
+      }
+
+      return render.apply(this, injectedValues);
+    };
 
     return template;
   }
